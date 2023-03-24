@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"chatgpt-api-go/model"
 	"encoding/json"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -63,24 +65,19 @@ func main() {
 	// 准备请求数据
 	conf := model.ApiConfig{
 		Model:    "gpt-3.5-turbo",
-		ApiKey:   "your api key",
+		ApiKey:   "sk-xxx",
 		ProxyUrl: "http://127.0.0.1:7890",
 	}
 	var wg sync.WaitGroup
 	var msgs []model.Message
-	fmt.Println("请输入你要提问的内容！(你可以输入exitnow退出当前程序)")
+	fmt.Println("请输入你要提问的内容！")
 	for {
 		wg.Add(1)
 		go func() {
-			var question string
-			_, err := fmt.Scanln(&question)
-			if err != nil {
-				fmt.Println("输入有误")
-				wg.Done()
-				return
-			}
-			if question == "exitnow" {
-				os.Exit(0)
+			reader := bufio.NewReader(os.Stdin)
+			question, _ := reader.ReadString('\n')
+			if strings.Contains(question, "重新开始") {
+				msgs = make([]model.Message, 0)
 			}
 			msgs = append(msgs, model.Message{
 				Role:    "user",
