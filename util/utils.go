@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error) {
@@ -18,6 +20,7 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 	reqData := model.Request{
 		Model:    conf.Model,
 		Messages: msgs,
+		Stream:   conf.Stream,
 	}
 
 	reqBody, _ := json.Marshal(reqData)
@@ -59,14 +62,19 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 		return "", fmt.Errorf("HTTP 请求失败，状态码：%d", resp.StatusCode)
 	}
 
-	var respData model.ChatCompletion
-	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
-		return "", fmt.Errorf("解析响应数据失败: %v", err)
-	}
+	//打印返回的json
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(time.Now(), string(body))
+	return "", errors.New("API 接口访问失败")
 
-	if len(respData.Choices) > 0 {
-		return respData.Choices[0].Message.Role + ":" + respData.Choices[0].Message.Content, nil
-	} else {
-		return "", errors.New("API 接口访问失败")
-	}
+	//var respData model.ChatCompletion
+	//if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+	//	return "", fmt.Errorf("解析响应数据失败: %v", err)
+	//}
+	//
+	//if len(respData.Choices) > 0 {
+	//	return respData.Choices[0].Message.Role + ":" + respData.Choices[0].Message.Content, nil
+	//} else {
+	//	return "", errors.New("API 接口访问失败")
+	//}
 }

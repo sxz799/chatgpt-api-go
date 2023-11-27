@@ -5,6 +5,7 @@ import "time"
 type Request struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
+	Stream   bool      `json:"stream"`
 }
 
 type Usage struct {
@@ -40,4 +41,5 @@ type ApiConfig struct {
 	ProxyUrl      string
 	HistoryNumber int
 	Timeout       time.Duration
+	Stream        bool
 }

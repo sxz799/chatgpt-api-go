@@ -11,7 +11,7 @@ import (
 
 var (
 	chatModel     = "gpt-3.5-turbo"
-	apiKey        = "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+	apiKey        = "fk-acZ6z5NrR94_PGP-Mzttd3r7JMedvwc9ZhYmy_hROfM"
 	apiServer     = "https://ai.fakeopen.com/v1/chat/completions"
 	proxyUrl      = ""
 	historyNumber = 6
@@ -26,6 +26,7 @@ func main() {
 		ProxyUrl:      proxyUrl,
 		HistoryNumber: historyNumber,
 		Timeout:       timeout,
+		Stream:        false,
 	}
 
 	var msgs []model.Message
