@@ -1,13 +1,6 @@
 package model
 
-import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"net/http"
-	"net/url"
-	"time"
-)
+import "time"
 
 type Request struct {
 	Model    string    `json:"model"`
@@ -46,64 +39,5 @@ type ApiConfig struct {
 	ApiServer     string
 	ProxyUrl      string
 	HistoryNumber int
-}
-
-func SendChatPostMsg(msgs []Message, conf ApiConfig) (string, error) {
-	if len(msgs) > conf.HistoryNumber {
-		msgs = msgs[conf.HistoryNumber:]
-	}
-	reqData := Request{
-		Model:    conf.Model,
-		Messages: msgs,
-	}
-
-	// 将请求数据编码为 JSON 格式
-	reqBody, _ := json.Marshal(reqData)
-
-	// 创建 HTTP 请求
-	req, err := http.NewRequest("POST", conf.ApiServer, bytes.NewBuffer(reqBody))
-	if err != nil {
-		return "创建 HTTP 请求失败!", err
-	}
-
-	// 设置请求头
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+conf.ApiKey)
-
-	var client *http.Client
-	// 发送请求
-	if conf.ProxyUrl != "" {
-		proxyUrl, err := url.Parse(conf.ProxyUrl)
-		if err != nil {
-			return "代理读取失败!", err
-		}
-		client = &http.Client{
-			Timeout: 60 * time.Second,
-			Transport: &http.Transport{
-				Proxy: http.ProxyURL(proxyUrl),
-			},
-		}
-	} else {
-		client = &http.Client{
-			Timeout: 60 * time.Second,
-		}
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "发生了错误:", err
-	}
-	defer resp.Body.Close()
-
-	// 解析响应数据
-	var respData ChatCompletion
-	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
-		return "解析响应数据失败:", err
-	}
-	if len(respData.Choices) > 0 {
-		return respData.Choices[0].Message.Role + ":" + respData.Choices[0].Message.Content, nil
-	} else {
-		return "api接口访问失败", errors.New("api接口访问失败")
-	}
-
+	Timeout       time.Duration
 }
