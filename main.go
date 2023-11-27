@@ -11,7 +11,7 @@ import (
 
 var (
 	chatModel     = "gpt-3.5-turbo"
-	apiKey        = "fk-acZ6z5NrR94_PGP-Mzttd3r7JMedvwc9ZhYmy_hROfM"
+	apiKey        = "pk-this-is-a-real-free-pool-token-for-everyone"
 	apiServer     = "https://ai.fakeopen.com/v1/chat/completions"
 	proxyUrl      = ""
 	historyNumber = 6
@@ -26,15 +26,10 @@ func main() {
 		ProxyUrl:      proxyUrl,
 		HistoryNumber: historyNumber,
 		Timeout:       timeout,
-		Stream:        false,
+		Stream:        true,
 	}
 
 	var msgs []model.Message
-	msgs = append(msgs, model.Message{
-		Role:    "user",
-		Content: "你好！",
-	})
-
 	fmt.Println("您可以输入三个空格以开始新的对话！")
 
 	for {

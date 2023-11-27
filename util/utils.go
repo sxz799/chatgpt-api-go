@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
+	"strings"
 )
 
 func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error) {
@@ -29,12 +28,10 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 	if err != nil {
 		return "", fmt.Errorf("创建 HTTP 请求失败: %v", err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+conf.ApiKey)
 
 	var client *http.Client
-
 	if conf.ProxyUrl != "" {
 		proxyUrl, err := url.Parse(conf.ProxyUrl)
 		if err != nil {
@@ -62,19 +59,60 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 		return "", fmt.Errorf("HTTP 请求失败，状态码：%d", resp.StatusCode)
 	}
 
-	//打印返回的json
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(time.Now(), string(body))
-	return "", errors.New("API 接口访问失败")
+	switch conf.Stream {
 
-	//var respData model.ChatCompletion
-	//if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
-	//	return "", fmt.Errorf("解析响应数据失败: %v", err)
-	//}
-	//
-	//if len(respData.Choices) > 0 {
-	//	return respData.Choices[0].Message.Role + ":" + respData.Choices[0].Message.Content, nil
-	//} else {
-	//	return "", errors.New("API 接口访问失败")
-	//}
+	case true:
+		//用channel来接收数据
+		ch := make(chan string, 10)
+		go func() {
+			defer close(ch)
+			for {
+				buf := make([]byte, 1024)
+				n, err := resp.Body.Read(buf)
+				if err != nil {
+					break
+				}
+				if n > 0 {
+					ch <- string(buf[:n])
+				}
+			}
+		}()
+		lastStr := ""
+		for msg := range ch {
+			msg = strings.ReplaceAll(msg, "\n", "")
+			if msg == "data: [DONE]" {
+				msg = ""
+			}
+			if lastStr != "" {
+				msg = lastStr + msg
+			}
+			if string(msg[0]) == "d" && string(msg[len(msg)-1]) == "}" {
+				lastStr = ""
+				ss := strings.Split(msg, "data: ")
+				for _, s := range ss {
+					var respData model.ChatCompletionChunk
+					json.Unmarshal([]byte(s), &respData)
+					if len(respData.Choices) > 0 {
+						fmt.Print(respData.Choices[0].Delta.Content)
+					}
+				}
+			} else {
+				lastStr = msg
+				continue
+			}
+		}
+
+	case false:
+		var respData model.ChatCompletion
+		if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+			return "", fmt.Errorf("解析响应数据失败: %v", err)
+		}
+
+		if len(respData.Choices) > 0 {
+			return respData.Choices[0].Message.Role + ":" + respData.Choices[0].Message.Content, nil
+		} else {
+			return "", errors.New("API 接口访问失败")
+		}
+	}
+	return "", nil
 }
