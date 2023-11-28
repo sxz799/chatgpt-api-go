@@ -11,7 +11,7 @@ import (
 
 var (
 	chatModel     = "gpt-3.5-turbo"
-	apiKey        = "pk-this-is-a-real-free-pool-token-for-everyone"
+	apiKey        = "fk-AzZ6z5NrR94_PGP-Mzttd3r7JMedvwc9ZhYmy_hROfM"
 	apiServer     = "https://ai.fakeopen.com/v1/chat/completions"
 	proxyUrl      = ""
 	historyNumber = 6

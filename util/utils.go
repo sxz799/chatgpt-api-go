@@ -63,7 +63,7 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 	go func() {
 		defer close(ch)
 		for {
-			buf := make([]byte, 4096)
+			buf := make([]byte, 2048)
 			n, err := resp.Body.Read(buf)
 			if err != nil {
 				break
@@ -76,16 +76,17 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 	lastStr := ""
 	for msg := range ch {
 		msg = strings.ReplaceAll(msg, "\n", "")
-		if msg == "data: [DONE]" {
-			msg = ""
-		}
+		msg = strings.ReplaceAll(msg, "data: [DONE]", "")
 		if lastStr != "" {
 			msg = lastStr + msg
 		}
-		if string(msg[0]) == "d" && string(msg[len(msg)-1]) == "}" {
+		if strings.HasPrefix(msg, "d") && strings.HasSuffix(msg, "}") {
 			lastStr = ""
 			ss := strings.Split(msg, "data: ")
 			for _, s := range ss {
+				if s == "" {
+					continue
+				}
 				var respData model.ChatCompletionChunk
 				json.Unmarshal([]byte(s), &respData)
 				if len(respData.Choices) > 0 {
