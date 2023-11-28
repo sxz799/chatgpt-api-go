@@ -26,7 +26,6 @@ func main() {
 		ProxyUrl:      proxyUrl,
 		HistoryNumber: historyNumber,
 		Timeout:       timeout,
-		Stream:        true,
 	}
 
 	var msgs []model.Message

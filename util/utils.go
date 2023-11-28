@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"chatgpt-api-go/model"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -19,7 +18,7 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 	reqData := model.Request{
 		Model:    conf.Model,
 		Messages: msgs,
-		Stream:   conf.Stream,
+		Stream:   true,
 	}
 
 	reqBody, _ := json.Marshal(reqData)
@@ -59,60 +58,45 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 		return "", fmt.Errorf("HTTP 请求失败，状态码：%d", resp.StatusCode)
 	}
 
-	switch conf.Stream {
-
-	case true:
-		//用channel来接收数据
-		ch := make(chan string, 10)
-		go func() {
-			defer close(ch)
-			for {
-				buf := make([]byte, 1024)
-				n, err := resp.Body.Read(buf)
-				if err != nil {
-					break
-				}
-				if n > 0 {
-					ch <- string(buf[:n])
-				}
+	//用channel来接收数据
+	ch := make(chan string, 10)
+	go func() {
+		defer close(ch)
+		for {
+			buf := make([]byte, 4096)
+			n, err := resp.Body.Read(buf)
+			if err != nil {
+				break
 			}
-		}()
-		lastStr := ""
-		for msg := range ch {
-			msg = strings.ReplaceAll(msg, "\n", "")
-			if msg == "data: [DONE]" {
-				msg = ""
-			}
-			if lastStr != "" {
-				msg = lastStr + msg
-			}
-			if string(msg[0]) == "d" && string(msg[len(msg)-1]) == "}" {
-				lastStr = ""
-				ss := strings.Split(msg, "data: ")
-				for _, s := range ss {
-					var respData model.ChatCompletionChunk
-					json.Unmarshal([]byte(s), &respData)
-					if len(respData.Choices) > 0 {
-						fmt.Print(respData.Choices[0].Delta.Content)
-					}
-				}
-			} else {
-				lastStr = msg
-				continue
+			if n > 0 {
+				ch <- string(buf[:n])
 			}
 		}
-
-	case false:
-		var respData model.ChatCompletion
-		if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
-			return "", fmt.Errorf("解析响应数据失败: %v", err)
+	}()
+	lastStr := ""
+	for msg := range ch {
+		msg = strings.ReplaceAll(msg, "\n", "")
+		if msg == "data: [DONE]" {
+			msg = ""
 		}
-
-		if len(respData.Choices) > 0 {
-			return respData.Choices[0].Message.Role + ":" + respData.Choices[0].Message.Content, nil
+		if lastStr != "" {
+			msg = lastStr + msg
+		}
+		if string(msg[0]) == "d" && string(msg[len(msg)-1]) == "}" {
+			lastStr = ""
+			ss := strings.Split(msg, "data: ")
+			for _, s := range ss {
+				var respData model.ChatCompletionChunk
+				json.Unmarshal([]byte(s), &respData)
+				if len(respData.Choices) > 0 {
+					fmt.Print(respData.Choices[0].Delta.Content)
+				}
+			}
 		} else {
-			return "", errors.New("API 接口访问失败")
+			lastStr = msg
+			continue
 		}
 	}
+
 	return "", nil
 }

@@ -59,5 +59,4 @@ type ApiConfig struct {
 	ProxyUrl      string
 	HistoryNumber int
 	Timeout       time.Duration
-	Stream        bool
 }
