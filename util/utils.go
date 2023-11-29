@@ -79,9 +79,9 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 		msg = strings.ReplaceAll(msg, "data: [DONE]", "")
 		if lastStr != "" {
 			msg = lastStr + msg
+			lastStr = ""
 		}
 		if strings.HasPrefix(msg, "d") && strings.HasSuffix(msg, "}") {
-			lastStr = ""
 			ss := strings.Split(msg, "data: ")
 			for _, s := range ss {
 				if s == "" {

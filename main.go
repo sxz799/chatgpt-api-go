@@ -11,7 +11,7 @@ import (
 
 var (
 	chatModel     = "gpt-3.5-turbo"
-	apiKey        = "fk-AzZ6z5NrR94_PGP-Mzttd3r7JMedvwc9ZhYmy_hROfM"
+	apiKey        = "fk-AAZ6z5NrR94_PGP-Mzttd3r7JMedvwc9ZhYmy_hROfM"
 	apiServer     = "https://ai.fakeopen.com/v1/chat/completions"
 	proxyUrl      = ""
 	historyNumber = 6
@@ -32,7 +32,7 @@ func main() {
 	fmt.Println("您可以输入三个空格以开始新的对话！")
 
 	for {
-		fmt.Println("请提问:")
+		fmt.Print("You:")
 		reader := bufio.NewReader(os.Stdin)
 		question, _ := reader.ReadString('\n')
 
