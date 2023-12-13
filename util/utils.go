@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error) {
@@ -62,41 +63,42 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 	ch := make(chan string, 10)
 	go func() {
 		defer close(ch)
+		lastStr := ""
 		for {
 			buf := make([]byte, 2048)
 			n, err := resp.Body.Read(buf)
 			if err != nil {
 				break
 			}
-			if n > 0 {
-				ch <- string(buf[:n])
+			var str = string(buf[:n])
+			if lastStr != "" {
+				str = lastStr + str
+				lastStr = ""
 			}
+			split := strings.Split(str, "data: ")
+			for _, s := range split {
+				s = strings.ReplaceAll(s, "\n", "")
+				s = strings.ReplaceAll(s, "data: [DONE]", "")
+				if strings.HasPrefix(s, "{") && strings.HasSuffix(s, "}") {
+					var chunk model.ChatCompletionChunk
+					err = json.Unmarshal([]byte(s), &chunk)
+					if err != nil {
+						continue
+					}
+					if len(chunk.Choices) > 0 {
+						ch <- chunk.Choices[0].Delta.Content
+					}
+				} else {
+					lastStr = s
+				}
+			}
+
 		}
 	}()
-	lastStr := ""
+
 	for msg := range ch {
-		msg = strings.ReplaceAll(msg, "\n", "")
-		msg = strings.ReplaceAll(msg, "data: [DONE]", "")
-		if lastStr != "" {
-			msg = lastStr + msg
-			lastStr = ""
-		}
-		if strings.HasPrefix(msg, "d") && strings.HasSuffix(msg, "}") {
-			ss := strings.Split(msg, "data: ")
-			for _, s := range ss {
-				if s == "" {
-					continue
-				}
-				var respData model.ChatCompletionChunk
-				json.Unmarshal([]byte(s), &respData)
-				if len(respData.Choices) > 0 {
-					fmt.Print(respData.Choices[0].Delta.Content)
-				}
-			}
-		} else {
-			lastStr = msg
-			continue
-		}
+		fmt.Print(msg)
+		time.Sleep(20 * time.Millisecond)
 	}
 
 	return "", nil

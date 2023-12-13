@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	chatModel     = "gpt-3.5-turbo"
-	apiKey        = "fk-AAZ6z5NrR94_PGP-Mzttd3r7JMedvwc9ZhYmy_hROfM"
-	apiServer     = "https://ai.fakeopen.com/v1/chat/completions"
+	chatModel     = "gpt-4"
+	apiKey        = "sk-xxxxxxxxxxxxxxxxxxxxxxxxxx"
+	apiServer     = "https://api.openai.com/v1/chat/completions"
 	proxyUrl      = ""
 	historyNumber = 6
 	timeout       = 60 * time.Second
