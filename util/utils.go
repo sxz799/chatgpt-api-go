@@ -11,41 +11,44 @@ import (
 	"time"
 )
 
-func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error) {
-	if len(msgs) > conf.HistoryNumber {
-		msgs = msgs[conf.HistoryNumber:]
+var Msgs []model.Message
+var Conf model.ApiConfig
+
+func SendChatPostMsg() (string, error) {
+	if len(Msgs) > Conf.HistoryNumber {
+		Msgs = Msgs[Conf.HistoryNumber:]
 	}
 
 	reqData := model.Request{
-		Model:    conf.Model,
-		Messages: msgs,
+		Model:    Conf.Model,
+		Messages: Msgs,
 		Stream:   true,
 	}
 
 	reqBody, _ := json.Marshal(reqData)
 
-	req, err := http.NewRequest("POST", conf.ApiServer, bytes.NewBuffer(reqBody))
+	req, err := http.NewRequest("POST", Conf.ApiServer, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return "", fmt.Errorf("创建 HTTP 请求失败: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+conf.ApiKey)
+	req.Header.Set("Authorization", "Bearer "+Conf.ApiKey)
 
 	var client *http.Client
-	if conf.ProxyUrl != "" {
-		proxyUrl, err := url.Parse(conf.ProxyUrl)
+	if Conf.ProxyUrl != "" {
+		proxyUrl, err := url.Parse(Conf.ProxyUrl)
 		if err != nil {
 			return "", fmt.Errorf("代理读取失败: %v", err)
 		}
 		client = &http.Client{
-			Timeout: conf.Timeout,
+			Timeout: Conf.Timeout,
 			Transport: &http.Transport{
 				Proxy: http.ProxyURL(proxyUrl),
 			},
 		}
 	} else {
 		client = &http.Client{
-			Timeout: conf.Timeout,
+			Timeout: Conf.Timeout,
 		}
 	}
 
@@ -95,11 +98,16 @@ func SendChatPostMsg(msgs []model.Message, conf model.ApiConfig) (string, error)
 
 		}
 	}()
-
+	result := ""
 	for msg := range ch {
 		fmt.Print(msg)
+		result += msg
 		time.Sleep(20 * time.Millisecond)
 	}
+	Msgs = append(Msgs, model.Message{
+		Role:    "assistant",
+		Content: result,
+	})
 
 	return "", nil
 }

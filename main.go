@@ -19,7 +19,7 @@ var (
 )
 
 func main() {
-	conf := model.ApiConfig{
+	util.Conf = model.ApiConfig{
 		Model:         chatModel,
 		ApiKey:        apiKey,
 		ApiServer:     apiServer,
@@ -28,7 +28,6 @@ func main() {
 		Timeout:       timeout,
 	}
 
-	var msgs []model.Message
 	fmt.Println("您可以输入三个空格以开始新的对话！")
 
 	for {
@@ -38,13 +37,13 @@ func main() {
 
 		if question == "   \n" {
 			fmt.Println("好的，现在重新开始对话！")
-			msgs = nil
+			util.Msgs = []model.Message{}
 		} else {
-			msgs = append(msgs, model.Message{
+			util.Msgs = append(util.Msgs, model.Message{
 				Role:    "user",
 				Content: question,
 			})
-			result, err := util.SendChatPostMsg(msgs, conf)
+			result, err := util.SendChatPostMsg()
 			if err != nil {
 				fmt.Println(err.Error())
 			}
